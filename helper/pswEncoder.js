@@ -13,7 +13,7 @@ const encodePassword = async (password) => {
 const comparePassword = async (plainPassword, hashedPassword) => {
   try {
     const match = await bycript.compare(plainPassword, hashedPassword);
-    return match; // true ou false
+    return match;
   } catch (err) {
     throw new Error("Error comparing password: " + err.message);
   }

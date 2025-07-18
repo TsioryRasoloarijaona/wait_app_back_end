@@ -5,7 +5,7 @@ const secret = process.env.JWT_SECRET
 const tokenGerate = (user) => {
     const playload = {
         id : user.id ,
-        persmissions : user.permissions
+        permissions : user.permissions
     }
 
     return jwt.sign(playload , secret , {expiresIn : '48h'}) ;

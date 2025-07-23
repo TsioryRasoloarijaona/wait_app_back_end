@@ -4,7 +4,7 @@ const app = express() ;
 const port = 3000 ;
 
 const pingRoutes = require('./routes/pingRoutes') ;
-const userRoutes = require('./routes/userRoutes')
+const userRoutes = require('./routes/userRoutes');
 
 app.use(cors());
 
@@ -12,6 +12,12 @@ app.use(express.json()) ;
 app.use('/' , pingRoutes) ;
 app.use('/users' , userRoutes) ;
 
-
-
 app.listen(port , ()=>{console.log(`Server is running on port ${port}`)}) ;
+
+//Moi
+
+const queueRouter = require("./routes/queueRouter");
+app.use("/queue", queueRouter);
+
+const etablissementRouter = require("./routes/etablissementRouter");
+app.use("/etablissement", etablissementRouter);

@@ -33,3 +33,38 @@ model Users {
   connectionType ConnectionType @default(pswd)
   permissions    Permissions    @default(user)
 }
+
+
+// Moi
+
+model EtablissementRequest {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String
+  etablissementName String
+  status     String   @default("pending") // "pending", "approved", "rejected"
+  createdAt  DateTime @default(now())
+}
+
+
+model Etablissement {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  secteur     String
+  address     String
+  ville       String
+  userId      String   @db.ObjectId // L'utilisateur(gérant)
+  createdAt   DateTime      @default(now())
+  waitingList WaitingList[] // relation vers les entrées dans la file
+}
+
+model WaitingList {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   
+  name      String   
+  email     String   
+  position  Int      
+  hasLeft   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  etablissementId   String         @db.ObjectId
+  etablissement     Etablissement  @relation(fields: [etablissementId], references: [id])
+}

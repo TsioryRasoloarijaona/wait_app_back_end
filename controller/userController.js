@@ -35,7 +35,10 @@ const emailPasswordRegister = async (req, res) => {
       permissions: "user",
     });
     const token = tokenService.tokenGerate(user);
-    res.status(201).json({ token: token });
+    res.status(201).json({ 
+      token: token,
+      id: user.id
+     });
   } catch (error) {
     res.status(500).json({
       error: "An error occurred while registering the user." + error.message,
@@ -54,7 +57,9 @@ const authentificate = async (req, res) => {
   if (user) {
     if (await encrypt.comparePassword(password, user.password)) {
       const token = tokenService.tokenGerate(user);
-      res.status(200).json({ token: token });
+      res.status(200).json({ 
+        token: token,
+      id: user.id });
     }
   } else {
     res.status(401).json({ error: "email incorrect" });
@@ -94,3 +99,4 @@ module.exports = {
   authentificate,
   authentificateWithIdToken,
 };
+

@@ -197,6 +197,14 @@ const removeFromWaitList = async (req, res) => {
       });
     }
 
+    const remainingCount = await prisma.waitingList.count({
+      where: { etablissementId, hasLeft: false }
+    });
+
+    if (remainingCount === 0 && io) {
+      io.emit('waitlist-empty', { etablissementId });
+    }
+
     res.status(200).json({ message: "Utilisateur supprimé de la file d'attente avec succès" });
 
   } catch (error) {

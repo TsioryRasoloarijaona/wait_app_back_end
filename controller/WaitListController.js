@@ -1,7 +1,13 @@
 //Moi
+let io;
+
+function setIO(socketInstance) {
+  io = socketInstance;
+}
 
 const { PrismaClient } = require("../generated/prisma");
 const prisma = new PrismaClient();
+
 
 // Voir toutes les personnes dans la file (encore actives) d’un établissement sans entrer dans la file
 const getActiveWaitList = async (req, res) => {
@@ -41,6 +47,19 @@ const joinWaitList = async (req, res) => {
       return res.status(404).json({ error: "Établissement introuvable." });
     }
 
+    // Vérifie si l'utilisateur est déjà inscrit dans cette file (et n’a pas quitté)
+    const alreadyInQueue = await prisma.waitingList.findFirst({
+      where: {
+        userId,
+        etablissementId,
+        hasLeft: false,
+      },
+    });
+
+    if (alreadyInQueue) {
+      return res.status(400).json({ error: "Vous êtes déjà inscrit dans la file." });
+    }
+
     const count = await prisma.waitingList.count({
       where: { etablissementId, hasLeft: false }
     });
@@ -56,12 +75,17 @@ const joinWaitList = async (req, res) => {
       },
     });
 
+    if (io) {
+      io.emit('new-waiting-entry', newEntry);
+    }
+
     res.status(201).json(newEntry);
 
   } catch (error) {
     console.error("Erreur lors de l'ajout à la file :", error);
     res.status(500).json({ error: "Erreur lors de l'ajout à la file." });
   }
+  
 };
 
 // Obtenir la position actuelle d’un utilisateur dans la file
@@ -165,6 +189,14 @@ const removeFromWaitList = async (req, res) => {
       }
     });
 
+      if (io) {
+      io.emit('user-left-waitlist', {
+        userId,
+        etablissementId,
+        removedPosition,
+      });
+    }
+
     res.status(200).json({ message: "Utilisateur supprimé de la file d'attente avec succès" });
 
   } catch (error) {
@@ -174,6 +206,7 @@ const removeFromWaitList = async (req, res) => {
 };
 
 module.exports = {
+  setIO,
   getActiveWaitList,
   joinWaitList,
   getUserPosition,

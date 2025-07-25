@@ -11,12 +11,12 @@ const prisma = new PrismaClient();
 
 // Voir toutes les personnes dans la file (encore actives) d’un établissement sans entrer dans la file
 const getActiveWaitList = async (req, res) => {
-  const { etablissementId } = req.params;
+  const { establishmentId } = req.params;
 
   try {
     const waitList = await prisma.waitingList.findMany({
       where: {
-        etablissementId,
+        establishmentId,
         hasLeft: false,
       },
       orderBy: { createdAt: 'asc' },
@@ -32,18 +32,18 @@ const getActiveWaitList = async (req, res) => {
 //Ajouter à la file d'attente
 const joinWaitList = async (req, res) => {
   try {
-    const { name, email, userId, etablissementId } = req.body;
+    const { name, email, userId, establishmentId } = req.body;
 
-    if (!name || !email || !userId || !etablissementId) {
+    if (!name || !email || !userId || !establishmentId) {
       return res.status(400).json({ error: "Tous les champs sont requis." });
     }
 
     //Vérifie que l'établissement existe
-    const etablissement = await prisma.etablissement.findUnique({
-      where: { id: etablissementId },
+    const establishment = await prisma.establishment.findUnique({
+      where: { id: establishmentId },
     });
 
-    if (!etablissement) {
+    if (!establishment) {
       return res.status(404).json({ error: "Établissement introuvable." });
     }
 
@@ -51,7 +51,7 @@ const joinWaitList = async (req, res) => {
     const alreadyInQueue = await prisma.waitingList.findFirst({
       where: {
         userId,
-        etablissementId,
+        establishmentId,
         hasLeft: false,
       },
     });
@@ -61,7 +61,7 @@ const joinWaitList = async (req, res) => {
     }
 
     const count = await prisma.waitingList.count({
-      where: { etablissementId, hasLeft: false }
+      where: { establishmentId, hasLeft: false }
     });
 
     const newEntry = await prisma.waitingList.create({
@@ -69,7 +69,7 @@ const joinWaitList = async (req, res) => {
         name,
         email,
         userId,
-        etablissementId,
+        establishmentId,
         position: count + 1,
         hasLeft: false,
       },
@@ -97,7 +97,7 @@ const getUserPosition = async (req, res) => {
     const user = await prisma.waitingList.findFirst({
       where: {
         userId,
-        etablissementId,
+        establishmentId,
         hasLeft: false,
       },
     });
@@ -109,7 +109,7 @@ const getUserPosition = async (req, res) => {
     // Compter combien de personnes ont été ajoutées avant lui et sont encore dans la file
     const peopleBefore = await prisma.waitingList.count({
       where: {
-        etablissementId,
+        establishmentId,
         hasLeft: false,
         createdAt: {
           lt: user.createdAt,
@@ -131,11 +131,11 @@ const getUserPosition = async (req, res) => {
 
 //Historique des personnes qui sont ou ont été dans la file t'attente
 const getWaitListByEtablissement = async (req, res) => {
-  const { etablissementId } = req.params;
+  const { establishmentId } = req.params;
 
   try {
     const waitList = await prisma.waitingList.findMany({
-      where: { etablissementId },
+      where: { establishmentId },
       orderBy: { createdAt: "asc" },
     });
 
@@ -148,16 +148,15 @@ const getWaitListByEtablissement = async (req, res) => {
 
 //Supprimer quelqu'un de la file d'attente d'un établissement donné
 const removeFromWaitList = async (req, res) => {
-  const { userId, etablissementId } = req.params;
+  const { userId, establishmentId } = req.params;
 
   try {
-    // 1. Trouver la position de la personne à supprimer
-    const userToRemove = await prisma.waitingList.findFirst({ 
-      where: { 
+    const userToRemove = await prisma.waitingList.findFirst({
+      where: {
         userId,
-        etablissementId,
+        establishmentId,
         hasLeft: false
-      } 
+      }
     });
 
     if (!userToRemove) {
@@ -179,11 +178,11 @@ const removeFromWaitList = async (req, res) => {
 
     // 3. Mettre à jour les positions des suivants
     await prisma.waitingList.updateMany({
-      where: { 
+      where: {
         position: { gt: removedPosition },
-        etablissementId,
+        establishmentId,
         hasLeft: false
-       },
+      },
       data: {
         position: { decrement: 1 }
       }
@@ -192,17 +191,17 @@ const removeFromWaitList = async (req, res) => {
       if (io) {
       io.emit('user-left-waitlist', {
         userId,
-        etablissementId,
+        establishmentId,
         removedPosition,
       });
     }
 
     const remainingCount = await prisma.waitingList.count({
-      where: { etablissementId, hasLeft: false }
+      where: { establishmentId, hasLeft: false }
     });
 
     if (remainingCount === 0 && io) {
-      io.emit('waitlist-empty', { etablissementId });
+      io.emit('waitlist-empty', { establishmentId });
     }
 
     res.status(200).json({ message: "Utilisateur supprimé de la file d'attente avec succès" });

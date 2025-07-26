@@ -15,6 +15,13 @@ enum Permissions {
   superadmin
 }
 
+enum requestStatus {
+  pending
+  approved
+  rejected
+}
+
+
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
@@ -32,39 +39,48 @@ model Users {
   password       String?
   connectionType ConnectionType @default(pswd)
   permissions    Permissions    @default(user)
+  EstablishmentAdmin EstablishmentAdmin[]
 }
 
 
 // Moi
 
-model EtablissementRequest {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId     String
-  etablissementName String
-  status     String   @default("pending") // "pending", "approved", "rejected"
-  createdAt  DateTime @default(now())
+model EstablishmentRequest {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String
+  establishmentName String
+  status            requestStatus   @default(pending) // "pending", "approved", "rejected"
+  createdAt         DateTime @default(now())
 }
 
 
-model Etablissement {
+model establishment {
   id          String        @id @default(auto()) @map("_id") @db.ObjectId
   name        String
-  secteur     String
+  category    String
   address     String
-  ville       String
-  userId      String   @db.ObjectId // L'utilisateur(gérant)
+  city        String
   createdAt   DateTime      @default(now())
-  waitingList WaitingList[] // relation vers les entrées dans la file
+  waitingList WaitingList[]
+  EstablishmentAdmin EstablishmentAdmin[]
+}
+
+model EstablishmentAdmin {
+  id               String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String  @db.ObjectId
+  establishmentId  String  @db.ObjectId
+  establishment     establishment @relation(fields: [establishmentId], references: [id])
+  user             Users   @relation(fields: [userId], references: [id])
 }
 
 model WaitingList {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   
-  name      String   
-  email     String   
-  position  Int      
-  hasLeft   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  etablissementId   String         @db.ObjectId
-  etablissement     Etablissement  @relation(fields: [etablissementId], references: [id])
+   id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String
+  name            String
+  email           String
+  position        Int
+  hasLeft         Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  etablissementId String        @db.ObjectId
+  etablissement   establishment @relation(fields: [etablissementId], references: [id])
 }

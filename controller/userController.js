@@ -37,7 +37,6 @@ const emailPasswordRegister = async (req, res) => {
     const token = tokenService.tokenGerate(user);
     res.status(201).json({ 
       token: token,
-      id: user.id
      });
   } catch (error) {
     res.status(500).json({
@@ -58,8 +57,7 @@ const authentificate = async (req, res) => {
     if (await encrypt.comparePassword(password, user.password)) {
       const token = tokenService.tokenGerate(user);
       res.status(200).json({ 
-        token: token,
-      id: user.id });
+        token: token,});
     }
   } else {
     res.status(401).json({ error: "email incorrect" });

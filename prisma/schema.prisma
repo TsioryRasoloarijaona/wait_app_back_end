@@ -21,6 +21,12 @@ enum requestStatus {
   rejected
 }
 
+enum WaitingListStatus {
+  waiting
+  onboarded
+  leaved
+}
+
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
@@ -32,52 +38,42 @@ datasource db {
 }
 
 model Users {
-  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
   name           String
-  email          String         @unique
+  email          String          @unique
   password       String?
-  connectionType ConnectionType @default(pswd)
-  permissions    Permissions    @default(user)
-  EstablishmentAdmin EstablishmentAdmin[]
+  connectionType ConnectionType  @default(pswd)
+  permissions    Permissions     @default(user)
+  WaitingList    WaitingList[]
+  Establishment  Establishment[]
 }
 
-// Moi
-
-model EstablishmentRequest {
-  id                String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String
-  establishmentName String
-  status            requestStatus   @default(pending) // "pending", "approved", "rejected"
-  createdAt         DateTime @default(now())
-}
-
-model establishment {
+model Establishment {
   id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  adminId     String        @db.ObjectId
+  admin       Users         @relation(fields: [adminId], references: [id])
   name        String
-  category    String
+  categoryId  String        @db.ObjectId
+  category    Category      @relation(fields: [categoryId], references: [id])
   address     String
   city        String
   createdAt   DateTime      @default(now())
+  status      requestStatus @default(pending)
+  imageUrl    String?
   waitingList WaitingList[]
-  EstablishmentAdmin EstablishmentAdmin[]
-}
-
-model EstablishmentAdmin {
-  id               String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId           String  @db.ObjectId
-  establishmentId  String  @db.ObjectId
-  establishment     establishment @relation(fields: [establishmentId], references: [id])
-  user             Users   @relation(fields: [userId], references: [id])
 }
 
 model WaitingList {
   id              String        @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String
-  name            String
-  email           String
-  position        Int
-  hasLeft         Boolean       @default(false)
+  userId          String        @db.ObjectId
+  user            Users         @relation(fields: [userId], references: [id])
   createdAt       DateTime      @default(now())
   etablissementId String        @db.ObjectId
-  etablissement   establishment @relation(fields: [etablissementId], references: [id])
+  etablissement   Establishment @relation(fields: [etablissementId], references: [id])
+}
+
+model Category {
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
+  name           String          @unique
+  Establishments Establishment[]
 }

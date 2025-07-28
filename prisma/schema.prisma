@@ -15,6 +15,18 @@ enum Permissions {
   superadmin
 }
 
+enum requestStatus {
+  pending
+  approved
+  rejected
+}
+
+enum WaitingListStatus {
+  waiting
+  onboarded
+  leaved
+}
+
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
@@ -26,10 +38,42 @@ datasource db {
 }
 
 model Users {
-  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
   name           String
-  email          String         @unique
+  email          String          @unique
   password       String?
-  connectionType ConnectionType @default(pswd)
-  permissions    Permissions    @default(user)
+  connectionType ConnectionType  @default(pswd)
+  permissions    Permissions     @default(user)
+  WaitingList    WaitingList[]
+  Establishment  Establishment[]
+}
+
+model Establishment {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  adminId     String        @db.ObjectId
+  admin       Users         @relation(fields: [adminId], references: [id])
+  name        String
+  categoryId  String        @db.ObjectId
+  category    Category      @relation(fields: [categoryId], references: [id])
+  address     String
+  city        String
+  createdAt   DateTime      @default(now())
+  status      requestStatus @default(pending)
+  imageUrl    String?
+  waitingList WaitingList[]
+}
+
+model WaitingList {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String        @db.ObjectId
+  user            Users         @relation(fields: [userId], references: [id])
+  createdAt       DateTime      @default(now())
+  etablissementId String        @db.ObjectId
+  etablissement   Establishment @relation(fields: [etablissementId], references: [id])
+}
+
+model Category {
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
+  name           String          @unique
+  Establishments Establishment[]
 }

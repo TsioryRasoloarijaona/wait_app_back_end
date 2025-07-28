@@ -35,7 +35,9 @@ const emailPasswordRegister = async (req, res) => {
       permissions: "user",
     });
     const token = tokenService.tokenGerate(user);
-    res.status(201).json({ token: token });
+    res.status(201).json({ 
+      token: token,
+     });
   } catch (error) {
     res.status(500).json({
       error: "An error occurred while registering the user." + error.message,
@@ -54,7 +56,8 @@ const authentificate = async (req, res) => {
   if (user) {
     if (await encrypt.comparePassword(password, user.password)) {
       const token = tokenService.tokenGerate(user);
-      res.status(200).json({ token: token });
+      res.status(200).json({ 
+        token: token,});
     }
   } else {
     res.status(401).json({ error: "email incorrect" });
@@ -89,8 +92,24 @@ const authentificateWithIdToken = async (req, res) => {
   } catch (error) {}
 };
 
+const getByUserId = async (id) => {
+  try {
+    const user = await prisma.users.findUnique({
+      where : {
+        id : id
+      }
+    })
+
+    return user ;
+  } catch (error) {
+    console.error("Error fetching user by ID:", error);
+  }
+}
+
 module.exports = {
   emailPasswordRegister,
   authentificate,
   authentificateWithIdToken,
+  getByUserId
 };
+

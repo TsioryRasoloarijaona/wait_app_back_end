@@ -1,5 +1,6 @@
 const { PrismaClient } = require("../generated/prisma");
 const prisma = new PrismaClient();
+const getByUserId = require("./userController").getByUserId;
 
 const createCategory = async (categoryName) => {
   const category = await prisma.category.create({
@@ -31,21 +32,46 @@ const createEtablissementRequest = async (req, res) => {
     });
     res.status(201).json(newEstablishment);
   } catch (error) {
+    console.error(error.message);
     res.status(500).json({
       error: "some fields are empty" + error.message,
     });
   }
 };
 
+const getCategoryById = async (id) => {
+  try {
+    const categories = await prisma.category.findUnique({
+      where: { id: id },
+    });
+    return categories;
+  } catch (error) {}
+};
+
 const getEstablishmentsByStatus = async (req, res) => {
   const status = req.params.status;
+  const result = [];
   try {
     const requests = await prisma.establishment.findMany({
       where: {
         status: status,
       },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
-    res.status(200).json(requests);
+
+    for (let i = 0; i < requests.length; i++) {
+      const username = await getByUserId(requests[i].adminId);
+      const categoryName = await getCategoryById(requests[i].categoryId);
+      let user = {
+        name: username.name,
+        categoryName: categoryName.name,
+        establishmentInfo: requests[i],
+      };
+      result.push(user);
+    }
+    res.status(200).json(result);
   } catch (error) {
     console.error("Erreur lors de la récupération des demandes :", error);
     res.status(500).json({ error: "Erreur serveur" });
@@ -75,16 +101,40 @@ const getEtablissementsByUserId = async (req, res) => {
 };
 
 const updateEtabRequestStatus = async (req, res) => {
+  const data = req.body;
+  let updated = [];
+  let failed = [];
+
   try {
-    const { establishmentId, newStatus } = req.body;
-    const establishmentUpdated = await prisma.establishment.update({
-      where: { id: establishmentId },
-      data: { status: newStatus },
+    for (const item of data) {
+      const { establishmentId, newStatus } = item;
+
+      if (!establishmentId || !newStatus) {
+        failed.push({ item, reason: "ID ou status manquant" });
+        continue;
+      }
+
+      try {
+        const establishmentUpdated = await prisma.establishment.update({
+          where: { id: establishmentId },
+          data: { status: newStatus },
+        });
+
+        updated.push(establishmentUpdated);
+      } catch (err) {
+        failed.push({ item, reason: err.message });
+      }
+    }
+
+    return res.status(200).json({
+      updatedCount: updated.length,
+      failedCount: failed.length,
+      updated,
+      failed,
     });
-    res.status(200).json(establishmentUpdated);
   } catch (error) {
     console.error("Erreur validation/refus demande :", error);
-    res.status(500).json({ error: "Erreur serveur" });
+    return res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
@@ -137,6 +187,17 @@ const createEtablissementFromRequest = async (req, res) => {
   }
 };
 
+const getAllCategories = async (req, res) => {
+  try {
+    const categories = await prisma.category.findMany();
+    res.status(200).json(categories);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la récupération des catégories." });
+  }
+};
+
 /*const getDashboardEtablissement = async (req, res) => {
   try {
     const { etablissementId } = req.params;
@@ -183,6 +244,7 @@ module.exports = {
   getEtablissementsByUserId,
   updateEtabRequestStatus,
   createEtablissementFromRequest,
-  updateEstablishmentPicture
+  updateEstablishmentPicture,
+  getAllCategories,
   //getDashboardEtablissement,
 };

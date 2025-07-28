@@ -92,9 +92,24 @@ const authentificateWithIdToken = async (req, res) => {
   } catch (error) {}
 };
 
+const getByUserId = async (id) => {
+  try {
+    const user = await prisma.users.findUnique({
+      where : {
+        id : id
+      }
+    })
+
+    return user ;
+  } catch (error) {
+    console.error("Error fetching user by ID:", error);
+  }
+}
+
 module.exports = {
   emailPasswordRegister,
   authentificate,
   authentificateWithIdToken,
+  getByUserId
 };
 

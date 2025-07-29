@@ -90,7 +90,7 @@ const getEtablissementsByUserId = async (req, res) => {
 
     const etablissements = await prisma.establishment.findMany({
       where: {
-        userId: userId,
+        adminId : userId,
       },
     });
 
@@ -238,6 +238,55 @@ const getAllCategories = async (req, res) => {
   }
 };*/
 
+const countEtablissementsByStatus = async (req, res) => {
+  const { status } = req.params;
+
+  try {
+    const count = await prisma.establishment.count({
+      where: {
+        status: status,
+      },
+    });
+
+    res.status(200).json({ total : count });
+  } catch (error) {
+    console.error("Erreur lors du comptage des établissements :", error);
+    res.status(500).json({ error: "Erreur serveur." });
+  }
+};
+
+const countEtablissementsThisWeek = async (req, res) => {
+  try {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diffToMonday = (dayOfWeek + 6) % 7;
+
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - diffToMonday);
+    monday.setHours(0, 0, 0, 0);
+
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+
+    const count = await prisma.establishment.count({
+      where: {
+        createdAt: {
+          gte: monday,
+          lte: sunday,
+        },
+      },
+    });
+
+    res.status(200).json({ weekStart: monday, weekEnd: sunday, total: count });
+  } catch (error) {
+    console.error("Erreur lors du comptage des établissements de la semaine :", error);
+    res.status(500).json({ error: "Erreur serveur." });
+  }
+};
+
+
+
 module.exports = {
   createEtablissementRequest,
   getEstablishmentsByStatus,
@@ -246,5 +295,7 @@ module.exports = {
   createEtablissementFromRequest,
   updateEstablishmentPicture,
   getAllCategories,
+  countEtablissementsByStatus,
+  countEtablissementsThisWeek
   //getDashboardEtablissement,
 };

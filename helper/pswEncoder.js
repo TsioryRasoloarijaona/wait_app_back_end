@@ -4,6 +4,7 @@ const selRound = 10;
 const encodePassword = async (password) => {
   try {
     const hash = await bycript.hash(password, selRound);
+
     return hash;
   } catch (err) {
     throw new Error("Error encoding password: " + err.message);

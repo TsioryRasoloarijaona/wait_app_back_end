@@ -106,10 +106,31 @@ const getByUserId = async (id) => {
   }
 }
 
+const userInfo = async (req , res) => {
+  const {id} = req.params
+  try {
+    const user = await prisma.users.findUnique({
+      where : {
+        id : id
+      }
+    })
+
+    const result = {
+      name : user.name ,
+      email : user.email
+    }
+
+    res.status(200).json(result)
+  } catch (error) {
+    
+  }
+}
+
 module.exports = {
   emailPasswordRegister,
   authentificate,
   authentificateWithIdToken,
-  getByUserId
+  getByUserId,
+  userInfo
 };
 

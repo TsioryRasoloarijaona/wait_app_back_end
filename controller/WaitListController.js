@@ -31,7 +31,7 @@ const insertWaitList = async (req, res) => {
       establishmentId,
       total: totalLine,
     });
-    res.status(201).json({ success: "you are in the waitlist" });
+    res.status(201).json({ position: totalLine });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

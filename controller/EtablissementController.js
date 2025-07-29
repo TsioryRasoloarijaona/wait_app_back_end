@@ -1,6 +1,7 @@
 const { PrismaClient } = require("../generated/prisma");
 const prisma = new PrismaClient();
 const getByUserId = require("./userController").getByUserId;
+const waitListTotal = require('./WaitListController').getTotalWaitingList
 
 const createCategory = async (categoryName) => {
   const category = await prisma.category.create({
@@ -64,10 +65,12 @@ const getEstablishmentsByStatus = async (req, res) => {
     for (let i = 0; i < requests.length; i++) {
       const username = await getByUserId(requests[i].adminId);
       const categoryName = await getCategoryById(requests[i].categoryId);
+      const getTotalWaitingList = await waitListTotal(requests[i].id)
       let user = {
         name: username.name,
         categoryName: categoryName.name,
         establishmentInfo: requests[i],
+        total : getTotalWaitingList
       };
       result.push(user);
     }

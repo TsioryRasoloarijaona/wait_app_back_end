@@ -64,12 +64,13 @@ model Establishment {
 }
 
 model WaitingList {
-  id              String        @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String        @db.ObjectId
-  user            Users         @relation(fields: [userId], references: [id])
-  createdAt       DateTime      @default(now())
-  etablissementId String        @db.ObjectId
-  etablissement   Establishment @relation(fields: [etablissementId], references: [id])
+  id                String            @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String            @db.ObjectId
+  user              Users             @relation(fields: [userId], references: [id])
+  establishmentId   String            @db.ObjectId
+  createdAt         DateTime          @default(now())
+  establishment     Establishment     @relation(fields: [establishmentId], references: [id])
+  waitingListStatus WaitingListStatus @default(waiting)
 }
 
 model Category {

@@ -32,7 +32,7 @@ const insertWaitList = async (req, res) => {
       total: totalLine,
     });
     res.status(201).json({ position: totalLine });
-  } catch (error) {
+  } catch (error) {/*  */
     res.status(500).json({ error: error.message });
   }
 };

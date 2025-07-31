@@ -11,6 +11,10 @@ const encodePassword = async (password) => {
   }
 };
 
+const compare = ()=> {
+  return function (a, b) {}
+}
+
 const comparePassword = async (plainPassword, hashedPassword) => {
   try {
     const match = await bycript.compare(plainPassword, hashedPassword);

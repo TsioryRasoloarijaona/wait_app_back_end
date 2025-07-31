@@ -1,8 +1,12 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const controller = require("../controller/WaitListController");
+import {
+  getTotalWaitingList,
+  insertWaitList,
+  updateLine,
+} from "../controller/WaitListController.js";
 
 //router.post('',controller.getTotalWaitingList)
 
-router.post("/join", controller.insertWaitList);
-module.exports = router;
+router.post("/join", insertWaitList);
+export default router;

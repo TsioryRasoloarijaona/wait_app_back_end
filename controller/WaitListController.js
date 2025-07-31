@@ -1,6 +1,7 @@
-const { PrismaClient } = require("../generated/prisma");
+import { PrismaClient } from "../generated/prisma/index.js";
+import { upDateWaitList } from "../helper/WebsocketManager.js";
+
 const prisma = new PrismaClient();
-const websocketManager = require("../helper/WebsocketManager");
 
 const getTotalWaitingList = async (id) => {
   try {
@@ -27,12 +28,13 @@ const insertWaitList = async (req, res) => {
       },
     });
     const totalLine = await getTotalWaitingList(establishmentId);
-    websocketManager.upDateWaitList({
+    upDateWaitList({
       establishmentId,
       total: totalLine,
     });
     res.status(201).json({ position: totalLine });
-  } catch (error) {/*  */
+  } catch (error) {
+    /*  */
     res.status(500).json({ error: error.message });
   }
 };
@@ -50,8 +52,9 @@ const updateLine = async (req, res) => {
       },
     });
     const establishmentId = updateLine.establishmentId;
-    const total =await getTotalWaitingList(establishmentId);
-    websocketManager.upDateWaitList({
+    const total = await getTotalWaitingList(establishmentId);
+
+    upDateWaitList({
       establishmentId,
       total,
     });
@@ -61,8 +64,4 @@ const updateLine = async (req, res) => {
   }
 };
 
-module.exports = {
-  getTotalWaitingList,
-  insertWaitList,
-  updateLine,
-};
+export { getTotalWaitingList, insertWaitList, updateLine };

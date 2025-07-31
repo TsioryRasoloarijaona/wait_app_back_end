@@ -1,14 +1,16 @@
-const express = require("express");
+import express from "express";
+import {
+  authentificate,
+  authentificateWithIdToken,
+  emailPasswordRegister,
+  getByUserId,
+  userInfo,
+} from "../controller/userController.js";
 const router = express.Router();
-const controller = require("../controller/userController");
 
-router.post("/email-password-register", controller.emailPasswordRegister);
-router.post("/login", controller.authentificate);
-router.post(
-  "/authentificate-with-id-token",
-  controller.authentificateWithIdToken
-);
+router.post("/email-password-register", emailPasswordRegister);
+router.post("/login", authentificate);
+router.post("/authentificate-with-id-token", authentificateWithIdToken);
 
-router.get("/:id" , controller.userInfo)
-
-module.exports = router;
+router.get("/:id", userInfo);
+export default router;

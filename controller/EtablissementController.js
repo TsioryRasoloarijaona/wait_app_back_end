@@ -1,7 +1,8 @@
-const { PrismaClient } = require("../generated/prisma");
+import { PrismaClient } from '../generated/prisma/index.js';
+import { getByUserId } from './userController.js';
+import { getTotalWaitingList as waitListTotal } from './WaitListController.js';
+
 const prisma = new PrismaClient();
-const getByUserId = require("./userController").getByUserId;
-const waitListTotal = require('./WaitListController').getTotalWaitingList
 
 const createCategory = async (categoryName) => {
   const category = await prisma.category.create({
@@ -290,7 +291,7 @@ const countEtablissementsThisWeek = async (req, res) => {
 
 
 
-module.exports = {
+export {
   createEtablissementRequest,
   getEstablishmentsByStatus,
   getEtablissementsByUserId,

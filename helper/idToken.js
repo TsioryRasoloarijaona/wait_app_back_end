@@ -1,4 +1,4 @@
-const admin = require('./firebase');
+import admin from './firebase.js'
 
 const decodeToken = async(idToken)=> {
     try {
@@ -9,5 +9,5 @@ const decodeToken = async(idToken)=> {
     }
 }
 
-module.exports = decodeToken;
+export default decodeToken;
 

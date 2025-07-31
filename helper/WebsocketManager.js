@@ -12,7 +12,7 @@ function upDateWaitList(data) {
 }
 
 
-module.exports = {
+export {
     setIO ,
     upDateWaitList
 }

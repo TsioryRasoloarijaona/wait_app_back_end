@@ -1,5 +1,7 @@
 import { PrismaClient } from "../generated/prisma/index.js";
 import { upDateWaitList } from "../helper/WebsocketManager.js";
+import { getByUserId } from "./userController.js";
+import {startOfDay , endOfDay} from 'date-fns'
 
 const prisma = new PrismaClient();
 
@@ -64,4 +66,43 @@ const updateLine = async (req, res) => {
   }
 };
 
-export { getTotalWaitingList, insertWaitList, updateLine };
+const getWaitListByEstablishment = async (req, res) => {
+  const { establishmentId } = req.params;
+  let data = [];
+  try {
+    const list = await prisma.waitingList.findMany({
+      where: {
+        establishmentId: establishmentId,
+        createdAt : {
+          gte : startOfDay(new Date()),
+          lte : endOfDay(new Date())
+        }
+      },
+    });
+
+    for (const establishment of list) {
+      const userInfo = await getByUserId(establishment.userId);
+      const result = {
+        name: userInfo.name,
+        email: userInfo.email,
+        lineInfo: establishment,
+      };
+
+      data.push(result);
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+    console.log(error.message)
+  }
+};
+
+export {
+  getTotalWaitingList,
+  insertWaitList,
+  updateLine,
+  getWaitListByEstablishment,
+};

@@ -3,6 +3,7 @@ import { upDateWaitList } from "../helper/WebsocketManager.js";
 import { getByUserId } from "./userController.js";
 import { startOfDay, endOfDay } from "date-fns";
 import { sendToAdmin } from "../helper/WebsocketManager.js";
+import { is } from "date-fns/locale";
 
 const prisma = new PrismaClient();
 
@@ -42,12 +43,6 @@ const getLineInfo = async (id) => {
 const insertWaitList = async (req, res) => {
   const { userId, establishmentId } = req.body;
   try {
-    const waitList = await prisma.waitingList.create({
-      data: {
-        userId,
-        establishmentId,
-      },
-    });
     const isPresent = await prisma.waitingList.findFirst({
       where: {
         userId: userId,
@@ -57,9 +52,16 @@ const insertWaitList = async (req, res) => {
     });
 
     if (isPresent) {
+      console.log(isPresent.waitingListStatus, isPresent.establishmentId);
       res.status(409).json({ error: "you are already on the line" });
-      return ;
+      return;
     }
+    const waitList = await prisma.waitingList.create({
+      data: {
+        userId,
+        establishmentId,
+      },
+    });
 
     const totalLine = await getTotalWaitingList(establishmentId);
     upDateWaitList({
@@ -76,7 +78,6 @@ const insertWaitList = async (req, res) => {
 
     res.status(201).json({ position: totalLine });
   } catch (error) {
-    
     res.status(500).json({ error: error.message });
     console.error(error.message);
   }

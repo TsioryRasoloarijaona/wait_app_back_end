@@ -28,14 +28,14 @@ const getLineInfo = async (id) => {
     });
     const userInfo = await getByUserId(lineInfo.userId);
     const result = {
-        name: userInfo.name,
-        email: userInfo.email,
-        lineInfo: lineInfo,
-      };
+      name: userInfo.name,
+      email: userInfo.email,
+      lineInfo: lineInfo,
+    };
 
-    return result
+    return result;
   } catch (error) {
-    console.error(error.message)
+    console.error(error.message);
   }
 };
 
@@ -48,24 +48,37 @@ const insertWaitList = async (req, res) => {
         establishmentId,
       },
     });
+    const isPresent = await prisma.waitingList.findFirst({
+      where: {
+        userId: userId,
+        establishmentId: establishmentId,
+        waitingListStatus: "waiting",
+      },
+    });
+
+    if (isPresent) {
+      res.status(409).json({ error: "you are already on the line" });
+      return ;
+    }
+
     const totalLine = await getTotalWaitingList(establishmentId);
     upDateWaitList({
       establishmentId,
       total: totalLine,
     });
     const adminId = await prisma.establishment.findUnique({
-      where : {
-        id : establishmentId
-      }
-    })
-    const newLine = await getLineInfo(waitList.id)
-    sendToAdmin(adminId.adminId , "admin" , newLine)
+      where: {
+        id: establishmentId,
+      },
+    });
+    const newLine = await getLineInfo(waitList.id);
+    sendToAdmin(adminId.adminId, "admin", newLine);
 
     res.status(201).json({ position: totalLine });
   } catch (error) {
-    /*  */
+    
     res.status(500).json({ error: error.message });
-    console.error(error.message)
+    console.error(error.message);
   }
 };
 

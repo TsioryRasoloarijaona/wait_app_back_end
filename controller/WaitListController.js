@@ -1,7 +1,8 @@
 import { PrismaClient } from "../generated/prisma/index.js";
 import { upDateWaitList } from "../helper/WebsocketManager.js";
 import { getByUserId } from "./userController.js";
-import {startOfDay , endOfDay} from 'date-fns'
+import { startOfDay, endOfDay } from "date-fns";
+import { sendToAdmin } from "../helper/WebsocketManager.js";
 
 const prisma = new PrismaClient();
 
@@ -20,6 +21,24 @@ const getTotalWaitingList = async (id) => {
   }
 };
 
+const getLineInfo = async (id) => {
+  try {
+    const lineInfo = await prisma.waitingList.findUnique({
+      where: { id: id },
+    });
+    const userInfo = await getByUserId(lineInfo.userId);
+    const result = {
+        name: userInfo.name,
+        email: userInfo.email,
+        lineInfo: lineInfo,
+      };
+
+    return result
+  } catch (error) {
+    console.error(error.message)
+  }
+};
+
 const insertWaitList = async (req, res) => {
   const { userId, establishmentId } = req.body;
   try {
@@ -34,10 +53,19 @@ const insertWaitList = async (req, res) => {
       establishmentId,
       total: totalLine,
     });
+    const adminId = await prisma.establishment.findUnique({
+      where : {
+        id : establishmentId
+      }
+    })
+    const newLine = await getLineInfo(waitList.id)
+    sendToAdmin(adminId.adminId , "admin" , newLine)
+
     res.status(201).json({ position: totalLine });
   } catch (error) {
     /*  */
     res.status(500).json({ error: error.message });
+    console.error(error.message)
   }
 };
 
@@ -73,10 +101,10 @@ const getWaitListByEstablishment = async (req, res) => {
     const list = await prisma.waitingList.findMany({
       where: {
         establishmentId: establishmentId,
-        createdAt : {
-          gte : startOfDay(new Date()),
-          lte : endOfDay(new Date())
-        }
+        createdAt: {
+          gte: startOfDay(new Date()),
+          lte: endOfDay(new Date()),
+        },
       },
     });
 
@@ -96,7 +124,7 @@ const getWaitListByEstablishment = async (req, res) => {
     res.status(500).json({
       error: error.message,
     });
-    console.log(error.message)
+    console.log(error.message);
   }
 };
 

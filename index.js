@@ -2,7 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import http from 'http'
 import { Server } from 'socket.io';
-import {setIO } from './helper/WebsocketManager.js'
+import {setIO , registerUser , unregisterUser} from './helper/WebsocketManager.js'
 import pingRoutes from './routes/pingRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 import waitListRoutes from "./routes/waitListRoutes.js"
@@ -28,10 +28,15 @@ setIO(io)
 
 
 io.on('connection', (socket) => {
-  console.log('Un client est connecté :', socket.id);
+  const userId = socket.handshake.query.userId ;
+   if (userId) {
+    registerUser(userId, socket.id);
+    console.log(`🔗 Utilisateur ${userId} connecté avec socket ${socket.id}`);
+  }
 
   socket.on('disconnect', () => {
-    console.log('Client déconnecté :', socket.id);
+    console.log('🔌 Client déconnecté :', socket.id);
+    unregisterUser(socket.id);
   });
 });
 

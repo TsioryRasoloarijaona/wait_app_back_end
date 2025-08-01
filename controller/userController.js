@@ -33,7 +33,7 @@ const emailPasswordRegister = async (req, res) => {
       email,
       password: encodedPwd,
       connectionType: "pswd",
-      permissions: "user",
+      permissions: ["user"],
     });
     const token = tokenGerate(user);
     res.status(201).json({
@@ -81,7 +81,7 @@ const authentificateWithIdToken = async (req, res) => {
         email: decodedToken.email,
         password: null,
         connectionType: "oauth",
-        permissions: "user",
+        permissions: ["user"],
       });
       res.status(201).json({
         token: tokenGerate(userCreate),
@@ -91,7 +91,9 @@ const authentificateWithIdToken = async (req, res) => {
         token: tokenGerate(user),
       });
     }
-  } catch (error) {}
+  } catch (error) {
+    console.error(error.message)
+  }
 };
 
 const getByUserId = async (id) => {
@@ -126,10 +128,53 @@ const userInfo = async (req, res) => {
   } catch (error) {}
 };
 
+const userAccounts = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await getByUserId(id);
+    const establishment = await prisma.establishment.findFirst({
+      where: {
+        adminId: id,
+        status : "approved"
+      },
+    });
+
+    
+
+    const accounts = {
+      user: user.name,
+      admin: establishment ? establishment.name : null,
+    };
+
+    res.status(200).json(accounts);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "server error" });
+  }
+};
+
+const addPermissions = async (id , newPermission)=> {
+  try {
+    
+    const updated = await prisma.users.update({
+      where : {
+        id : id
+      },
+      data : {
+        permissions : newPermission
+      }
+    })
+  } catch (error) {
+    console.error(error.message)
+  }
+}
+
 export {
   emailPasswordRegister,
   authentificate,
   authentificateWithIdToken,
   getByUserId,
   userInfo,
+  userAccounts,
+  addPermissions
 };

@@ -3,6 +3,7 @@ import { upDateWaitList } from "../helper/WebsocketManager.js";
 import { getByUserId } from "./userController.js";
 import { startOfDay, endOfDay } from "date-fns";
 import { sendToAdmin } from "../helper/WebsocketManager.js";
+import { is } from "date-fns/locale";
 
 const prisma = new PrismaClient();
 
@@ -28,44 +29,57 @@ const getLineInfo = async (id) => {
     });
     const userInfo = await getByUserId(lineInfo.userId);
     const result = {
-        name: userInfo.name,
-        email: userInfo.email,
-        lineInfo: lineInfo,
-      };
+      name: userInfo.name,
+      email: userInfo.email,
+      lineInfo: lineInfo,
+    };
 
-    return result
+    return result;
   } catch (error) {
-    console.error(error.message)
+    console.error(error.message);
   }
 };
 
 const insertWaitList = async (req, res) => {
   const { userId, establishmentId } = req.body;
   try {
+    const isPresent = await prisma.waitingList.findFirst({
+      where: {
+        userId: userId,
+        establishmentId: establishmentId,
+        waitingListStatus: "waiting",
+      },
+    });
+
+    if (isPresent) {
+      console.log(isPresent.waitingListStatus, isPresent.establishmentId);
+      res.status(409).json({ error: "you are already on the line" });
+      return;
+    }
     const waitList = await prisma.waitingList.create({
       data: {
         userId,
         establishmentId,
       },
     });
+
     const totalLine = await getTotalWaitingList(establishmentId);
     upDateWaitList({
       establishmentId,
       total: totalLine,
     });
     const adminId = await prisma.establishment.findUnique({
-      where : {
-        id : establishmentId
-      }
-    })
-    const newLine = await getLineInfo(waitList.id)
-    sendToAdmin(adminId.adminId , "admin" , newLine)
+      where: {
+        id: establishmentId,
+      },
+    });
+    const newLine = await getLineInfo(waitList.id);
+    sendToAdmin(adminId.adminId, "admin", newLine);
 
     res.status(201).json({ position: totalLine });
   } catch (error) {
-    /*  */
     res.status(500).json({ error: error.message });
-    console.error(error.message)
+    console.error(error.message);
   }
 };
 

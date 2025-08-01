@@ -1,6 +1,7 @@
 import { PrismaClient } from "../generated/prisma/index.js";
 import { getByUserId, addPermissions } from "./userController.js";
 import { getTotalWaitingList as waitListTotal } from "./WaitListController.js";
+import { sendEmail } from "../helper/emailService.js";
 
 const prisma = new PrismaClient();
 
@@ -129,6 +130,17 @@ const updateEtabRequestStatus = async (req, res) => {
           },
         });
         await addPermissions(adminInfo.adminId, ["user", "admin"]);
+        const emailAdmin = await getByUserId(adminInfo.adminId);
+        await sendEmail({
+          to: emailAdmin.email,
+          subject: `reponse de demande sur wait app`,
+          text: `${
+            newStatus == "approved"
+              ? "nous somme ravis de vous annoncé votre demande à été approuvé"
+              : "desolé"
+          }`,
+        });
+        console.log('email send to' , emailAdmin.email)
 
         updated.push(establishmentUpdated);
       } catch (err) {
@@ -207,46 +219,6 @@ const getAllCategories = async (req, res) => {
       .json({ error: "Erreur lors de la récupération des catégories." });
   }
 };
-
-/*const getDashboardEtablissement = async (req, res) => {
-  try {
-    const { etablissementId } = req.params;
-
-    if (!etablissementId) {
-      return res.status(400).json({ error: "etablissementId est requis." });
-    }
-
-    const etablissement = await prisma.etablissement.findUnique({
-      where: { id: etablissementId },
-    });
-
-    if (!etablissement) {
-      return res.status(404).json({ error: "Établissement introuvable." });
-    }
-
-    const enFile = await prisma.waitingList.count({
-      where: { etablissementId },
-    });
-
-    const hasLeftCount = await prisma.waitingList.count({
-      where: {
-        etablissementId,
-        hasLeft: true,
-      },
-    });
-
-    res.status(200).json({
-      etablissement,
-      stats: {
-        actuellementDansLaFile: enFile,
-        totalQuitteLaFile: hasLeftCount,
-      },
-    });
-  } catch (error) {
-    console.error("Erreur dashboard :", error);
-    res.status(500).json({ error: "Erreur serveur." });
-  }
-};*/
 
 const countEtablissementsByStatus = async (req, res) => {
   const { status } = req.params;

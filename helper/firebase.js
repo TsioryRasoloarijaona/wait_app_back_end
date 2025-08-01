@@ -1,4 +1,4 @@
-var admin = require("firebase-admin");
+import admin from 'firebase-admin'
 
 admin.initializeApp({
   credential: admin.credential.cert({
@@ -15,4 +15,4 @@ admin.initializeApp({
   }),
 });
 
-module.exports = admin;
+export default admin;

@@ -1,9 +1,9 @@
-const bycript = require("bcrypt");
+import bcrypt from 'bcrypt'
 const selRound = 10;
 
 const encodePassword = async (password) => {
   try {
-    const hash = await bycript.hash(password, selRound);
+    const hash = await bcrypt.hash(password, selRound);
 
     return hash;
   } catch (err) {
@@ -11,20 +11,18 @@ const encodePassword = async (password) => {
   }
 };
 
-const compare = ()=> {
-  return function (a, b) {}
-}
+
 
 const comparePassword = async (plainPassword, hashedPassword) => {
   try {
-    const match = await bycript.compare(plainPassword, hashedPassword);
+    const match = await bcrypt.compare(plainPassword, hashedPassword);
     return match;
   } catch (err) {
     throw new Error("Error comparing password: " + err.message);
   }
 };
 
-module.exports = {
+export {
   encodePassword,
   comparePassword,
 };

@@ -1,7 +1,8 @@
-const { PrismaClient } = require("../generated/prisma");
+import { PrismaClient } from "../generated/prisma/index.js";
+import { getByUserId, addPermissions } from "./userController.js";
+import { getTotalWaitingList as waitListTotal } from "./WaitListController.js";
+
 const prisma = new PrismaClient();
-const getByUserId = require("./userController").getByUserId;
-const waitListTotal = require('./WaitListController').getTotalWaitingList
 
 const createCategory = async (categoryName) => {
   const category = await prisma.category.create({
@@ -65,12 +66,12 @@ const getEstablishmentsByStatus = async (req, res) => {
     for (let i = 0; i < requests.length; i++) {
       const username = await getByUserId(requests[i].adminId);
       const categoryName = await getCategoryById(requests[i].categoryId);
-      const getTotalWaitingList = await waitListTotal(requests[i].id)
+      const getTotalWaitingList = await waitListTotal(requests[i].id);
       let user = {
         name: username.name,
         categoryName: categoryName.name,
         establishmentInfo: requests[i],
-        total : getTotalWaitingList
+        total: getTotalWaitingList,
       };
       result.push(user);
     }
@@ -91,9 +92,9 @@ const getEtablissementsByUserId = async (req, res) => {
         .json({ error: "userId requis dans les paramètres." });
     }
 
-    const etablissements = await prisma.establishment.findMany({
+    const etablissements = await prisma.establishment.findFirst({
       where: {
-        adminId : userId,
+        adminId: userId,
       },
     });
 
@@ -122,6 +123,12 @@ const updateEtabRequestStatus = async (req, res) => {
           where: { id: establishmentId },
           data: { status: newStatus },
         });
+        const adminInfo = await prisma.establishment.findFirst({
+          where: {
+            id: establishmentId,
+          },
+        });
+        await addPermissions(adminInfo.adminId, ["user", "admin"]);
 
         updated.push(establishmentUpdated);
       } catch (err) {
@@ -251,7 +258,7 @@ const countEtablissementsByStatus = async (req, res) => {
       },
     });
 
-    res.status(200).json({ total : count });
+    res.status(200).json({ total: count });
   } catch (error) {
     console.error("Erreur lors du comptage des établissements :", error);
     res.status(500).json({ error: "Erreur serveur." });
@@ -283,14 +290,15 @@ const countEtablissementsThisWeek = async (req, res) => {
 
     res.status(200).json({ weekStart: monday, weekEnd: sunday, total: count });
   } catch (error) {
-    console.error("Erreur lors du comptage des établissements de la semaine :", error);
+    console.error(
+      "Erreur lors du comptage des établissements de la semaine :",
+      error
+    );
     res.status(500).json({ error: "Erreur serveur." });
   }
 };
 
-
-
-module.exports = {
+export {
   createEtablissementRequest,
   getEstablishmentsByStatus,
   getEtablissementsByUserId,
@@ -299,6 +307,6 @@ module.exports = {
   updateEstablishmentPicture,
   getAllCategories,
   countEtablissementsByStatus,
-  countEtablissementsThisWeek
+  countEtablissementsThisWeek,
   //getDashboardEtablissement,
 };

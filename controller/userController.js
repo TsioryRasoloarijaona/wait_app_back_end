@@ -1,8 +1,9 @@
-const { PrismaClient } = require("../generated/prisma");
-const encrypt = require("../helper/pswEncoder");
+import { PrismaClient } from "../generated/prisma/index.js";
+import { encodePassword, comparePassword } from "../helper/pswEncoder.js";
+import { tokenGerate } from "../helper/tokenService.js";
+import idToken from "../helper/idToken.js";
+
 const prisma = new PrismaClient();
-const tokenService = require("../helper/tokenService");
-const idToken = require("../helper/idToken");
 
 const createUser = async ({
   name,
@@ -24,7 +25,7 @@ const createUser = async ({
 
 const emailPasswordRegister = async (req, res) => {
   const { name, email, password } = req.body;
-  let encodedPwd = await encrypt.encodePassword(password);
+  let encodedPwd = await encodePassword(password);
   console.log("Encoded Password: ", encodedPwd);
   try {
     const user = await createUser({
@@ -32,12 +33,12 @@ const emailPasswordRegister = async (req, res) => {
       email,
       password: encodedPwd,
       connectionType: "pswd",
-      permissions: "user",
+      permissions: ["user"],
     });
-    const token = tokenService.tokenGerate(user);
-    res.status(201).json({ 
+    const token = tokenGerate(user);
+    res.status(201).json({
       token: token,
-     });
+    });
   } catch (error) {
     res.status(500).json({
       error: "An error occurred while registering the user." + error.message,
@@ -54,10 +55,11 @@ const authentificate = async (req, res) => {
     },
   });
   if (user) {
-    if (await encrypt.comparePassword(password, user.password)) {
-      const token = tokenService.tokenGerate(user);
-      res.status(200).json({ 
-        token: token,});
+    if (await comparePassword(password, user.password)) {
+      const token = tokenGerate(user);
+      res.status(200).json({
+        token: token,
+      });
     }
   } else {
     res.status(401).json({ error: "email incorrect" });
@@ -75,62 +77,104 @@ const authentificateWithIdToken = async (req, res) => {
     });
     if (!user) {
       const userCreate = await createUser({
-        name : decodedToken.name ,
-        email : decodedToken.email ,
-        password : null ,
-        connectionType : 'oauth',
-        permissions : 'user'
-      })
+        name: decodedToken.name,
+        email: decodedToken.email,
+        password: null,
+        connectionType: "oauth",
+        permissions: ["user"],
+      });
       res.status(201).json({
-        token : tokenService.tokenGerate(userCreate)
-      })
-    }else {
+        token: tokenGerate(userCreate),
+      });
+    } else {
       res.status(200).json({
-        token : tokenService.tokenGerate(user)
-      })
+        token: tokenGerate(user),
+      });
     }
-  } catch (error) {}
+  } catch (error) {
+    console.error(error.message)
+  }
 };
 
 const getByUserId = async (id) => {
   try {
     const user = await prisma.users.findUnique({
-      where : {
-        id : id
-      }
-    })
+      where: {
+        id: id,
+      },
+    });
 
-    return user ;
+    return user;
   } catch (error) {
     console.error("Error fetching user by ID:", error);
   }
-}
+};
 
-const userInfo = async (req , res) => {
-  const {id} = req.params
+const userInfo = async (req, res) => {
+  const { id } = req.params;
   try {
     const user = await prisma.users.findUnique({
-      where : {
-        id : id
-      }
-    })
+      where: {
+        id: id,
+      },
+    });
 
     const result = {
-      name : user.name ,
-      email : user.email
-    }
+      name: user.name,
+      email: user.email,
+    };
 
-    res.status(200).json(result)
-  } catch (error) {
+    res.status(200).json(result);
+  } catch (error) {}
+};
+
+const userAccounts = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await getByUserId(id);
+    const establishment = await prisma.establishment.findFirst({
+      where: {
+        adminId: id,
+        status : "approved"
+      },
+    });
+
     
+
+    const accounts = {
+      user: user.name,
+      admin: establishment ? establishment.name : null,
+    };
+
+    res.status(200).json(accounts);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "server error" });
+  }
+};
+
+const addPermissions = async (id , newPermission)=> {
+  try {
+    
+    const updated = await prisma.users.update({
+      where : {
+        id : id
+      },
+      data : {
+        permissions : newPermission
+      }
+    })
+  } catch (error) {
+    console.error(error.message)
   }
 }
 
-module.exports = {
+export {
   emailPasswordRegister,
   authentificate,
   authentificateWithIdToken,
   getByUserId,
-  userInfo
+  userInfo,
+  userAccounts,
+  addPermissions
 };
-

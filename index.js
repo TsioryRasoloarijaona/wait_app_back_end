@@ -1,8 +1,13 @@
-const express = require('express');
-const cors = require('cors');
-const http = require('http');
-const { Server } = require('socket.io');
-const websocketManager = require('./helper/WebsocketManager');
+import express from 'express'
+import cors from 'cors'
+import http from 'http'
+import { Server } from 'socket.io';
+import {setIO , registerUser , unregisterUser} from './helper/WebsocketManager.js'
+import pingRoutes from './routes/pingRoutes.js'
+import userRoutes from './routes/userRoutes.js'
+import waitListRoutes from "./routes/waitListRoutes.js"
+import etablissementRouter from "./routes/etablissementRouter.js"
+
 
 const app = express();
 const port = 3000;
@@ -19,14 +24,19 @@ const io = new Server(server, {
 });
 
 
-websocketManager.setIO(io);
+setIO(io)
 
 
 io.on('connection', (socket) => {
-  console.log('Un client est connecté :', socket.id);
+  const userId = socket.handshake.query.userId ;
+   if (userId) {
+    registerUser(userId, socket.id);
+    console.log(`🔗 Utilisateur ${userId} connecté avec socket ${socket.id}`);
+  }
 
   socket.on('disconnect', () => {
-    console.log('Client déconnecté :', socket.id);
+    console.log('🔌 Client déconnecté :', socket.id);
+    unregisterUser(socket.id);
   });
 });
 
@@ -37,10 +47,9 @@ app.use(cors());
 app.use(express.json());
 
 
-const pingRoutes = require('./routes/pingRoutes');
-const userRoutes = require('./routes/userRoutes');
-const waitListRoutes = require("./routes/waitListRoutes");
-const etablissementRouter = require("./routes/etablissementRouter");
+
+
+
 
 app.use('/', pingRoutes);
 app.use('/users', userRoutes);

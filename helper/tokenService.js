@@ -1,5 +1,6 @@
-const jwt = require('jsonwebtoken') ;
-require('dotenv').config();
+import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv'
+dotenv.config()
 const secret = process.env.JWT_SECRET
 
 const tokenGerate = (user) => {
@@ -21,7 +22,7 @@ const decodeToken = (token) => {
   }
 };
 
-module.exports = {
+export {
   tokenGerate,
   decodeToken
 };

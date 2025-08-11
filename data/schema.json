@@ -1,0 +1,63 @@
+{
+    "user": {
+        "id" : "string" ,
+        "name": "string",
+        "email": "string",
+        "password": "string",
+        "permission" : ["user" , "admin"] ,
+        "accountType" : "visitor | pro" ,
+        "establishments": [
+            {
+                "id":"string",
+                "generalInfo": {
+                    "name": "string",
+                    "category": "string",
+                    "avarageTime": "time"
+                },
+                "location": {
+                    "geographie": {
+                        "country": "string",
+                        "region": "string"
+                    },
+                    "coordinate": {
+                        "lat": 0,
+                        "long": 0
+                    }
+                },
+                "workingTime": [
+                    {
+                        "day" : "mon" ,
+                        "start": "time",
+                        "end": "time"
+                    },
+                    {
+                        "day" : "tues" ,
+                        "start": "time",
+                        "end": "time"
+                    }
+                ],
+                "contactInfo": {
+                    "phone": "string",
+                    "email": "string",
+                    "website": "string",
+                    "img": "string"
+                },
+                "status": "pending , approved , rejected",
+                "waitingLine": [
+                    {
+                        "id" : "string",
+                        "customer": {
+                            "name": "string",
+                            "email": "string"
+                        },
+                        "time": {
+                            "arrival": "time",
+                            "left": "time"
+                        },
+                        "status": "waiting , received , left"
+                    }
+                ]
+            }
+        ]
+    }
+}

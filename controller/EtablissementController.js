@@ -5,35 +5,29 @@ import { sendEmail } from "../helper/emailService.js";
 
 const prisma = new PrismaClient();
 
-const createCategory = async (categoryName) => {
-  const category = await prisma.category.create({
-    data: {
-      name: categoryName,
-    },
-  });
+const createEstablishmentRequest = async (req, res) => {
 
-  return category.id;
-};
+  let { adminId, generalInfo , placeInfo, contactInfo,workingDetail ,imageUrl } = req.body;
 
-const createEtablissementRequest = async (req, res) => {
+  const user = await getByUserId(adminId);
+  if (!user) {
+    return res.status(500).json({ error: "this admin id is not valid" });
+  }
+
   try {
-    let { adminId, name, categoryId, categoryName, address, city } = req.body;
+    const inserted = await prisma.establishment.create({
+      data : {
+        adminId ,
+        generalInfo ,
+        placeInfo,
+        contactInfo ,
+        workingDetail ,
+        imageUrl,
+      }
+    })
 
-    if (!categoryId) {
-      const newCategoryId = await createCategory(categoryName);
-      categoryId = newCategoryId;
-    }
+    return res.status(201).json(inserted);
 
-    const newEstablishment = await prisma.establishment.create({
-      data: {
-        adminId,
-        name,
-        categoryId,
-        address,
-        city,
-      },
-    });
-    res.status(201).json(newEstablishment);
   } catch (error) {
     console.error(error.message);
     res.status(500).json({
@@ -42,18 +36,8 @@ const createEtablissementRequest = async (req, res) => {
   }
 };
 
-const getCategoryById = async (id) => {
-  try {
-    const categories = await prisma.category.findUnique({
-      where: { id: id },
-    });
-    return categories;
-  } catch (error) {}
-};
-
 const getEstablishmentsByStatus = async (req, res) => {
   const status = req.params.status;
-  const result = [];
   try {
     const requests = await prisma.establishment.findMany({
       where: {
@@ -62,28 +46,30 @@ const getEstablishmentsByStatus = async (req, res) => {
       orderBy: {
         createdAt: "desc",
       },
+      include : {
+        waitingList : {
+          where: {
+            waitingListStatus: "waiting"
+          }
+        } ,
+        admin : {
+          select : {
+            name : true,
+            email : true,
+          }
+        } ,
+
+      }
     });
 
-    for (let i = 0; i < requests.length; i++) {
-      const username = await getByUserId(requests[i].adminId);
-      const categoryName = await getCategoryById(requests[i].categoryId);
-      const getTotalWaitingList = await waitListTotal(requests[i].id);
-      let user = {
-        name: username.name,
-        categoryName: categoryName.name,
-        establishmentInfo: requests[i],
-        total: getTotalWaitingList,
-      };
-      result.push(user);
-    }
-    res.status(200).json(result);
+    res.status(200).json(requests);
   } catch (error) {
     console.error("Erreur lors de la récupération des demandes :", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
-const getEtablissementsByUserId = async (req, res) => {
+const getEstablishmentsByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -93,19 +79,28 @@ const getEtablissementsByUserId = async (req, res) => {
         .json({ error: "userId requis dans les paramètres." });
     }
 
-    const etablissements = await prisma.establishment.findFirst({
+    const establihments = await prisma.establishment.findFirst({
       where: {
         adminId: userId,
       },
+      include : {
+        admin : {
+          select : {
+            name : true,
+            email : true,
+          }
+        }
+      }
     });
 
-    res.status(200).json(etablissements);
+    res.status(200).json(establihments);
   } catch (error) {
-    res.status(500).json({ error: "Erreur serveur.", error: error.message });
+    res.status(500).json({ error:"error from the server" });
+    console.error(error.message) ;
   }
 };
 
-const updateEtabRequestStatus = async (req, res) => {
+const updateEstablishmentStatus = async (req, res) => {
   const data = req.body;
   let updated = [];
   let failed = [];
@@ -136,7 +131,7 @@ const updateEtabRequestStatus = async (req, res) => {
           subject: `reponse de demande sur wait app`,
           text: `${
             newStatus == "approved"
-              ? "nous somme ravis de vous annoncé votre demande à été approuvé"
+              ? "nous somme ravis de vous annoncer que votre demande à été approuvé"
               : "desolé"
           }`,
         });
@@ -220,7 +215,7 @@ const getAllCategories = async (req, res) => {
   }
 };
 
-const countEtablissementsByStatus = async (req, res) => {
+const countEstablishmentsByStatus = async (req, res) => {
   const { status } = req.params;
 
   try {
@@ -271,14 +266,13 @@ const countEtablissementsThisWeek = async (req, res) => {
 };
 
 export {
-  createEtablissementRequest,
+  createEstablishmentRequest,
   getEstablishmentsByStatus,
-  getEtablissementsByUserId,
-  updateEtabRequestStatus,
+  getEstablishmentsByUserId,
+  updateEstablishmentStatus,
   createEtablissementFromRequest,
   updateEstablishmentPicture,
   getAllCategories,
-  countEtablissementsByStatus,
+  countEstablishmentsByStatus,
   countEtablissementsThisWeek,
-  //getDashboardEtablissement,
 };

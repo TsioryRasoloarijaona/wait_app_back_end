@@ -46,6 +46,8 @@ const emailPasswordRegister = async (req, res) => {
   }
 };
 
+
+
 const authentificate = async (req, res) => {
   const { email, password } = req.body;
 
@@ -102,6 +104,11 @@ const getByUserId = async (id) => {
       where: {
         id: id,
       },
+      select : {
+        name : true,
+        email : true,
+        permissions : true
+      }
     });
 
     return user;
@@ -143,7 +150,7 @@ const userAccounts = async (req, res) => {
 
     const accounts = {
       user: user.name,
-      admin: establishment ? establishment.name : null,
+      admin: establishment ? establishment.generalInfo.establishmentName : null,
     };
 
     res.status(200).json(accounts);

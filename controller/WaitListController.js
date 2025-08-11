@@ -26,15 +26,16 @@ const getLineInfo = async (id) => {
   try {
     const lineInfo = await prisma.waitingList.findUnique({
       where: { id: id },
+      includes : {
+        user : {
+          select : {
+            name : true,
+            email : true,
+          }
+        }
+      }
     });
-    const userInfo = await getByUserId(lineInfo.userId);
-    const result = {
-      name: userInfo.name,
-      email: userInfo.email,
-      lineInfo: lineInfo,
-    };
-
-    return result;
+    return lineInfo;
   } catch (error) {
     console.error(error.message);
   }
@@ -115,25 +116,24 @@ const getWaitListByEstablishment = async (req, res) => {
     const list = await prisma.waitingList.findMany({
       where: {
         establishmentId: establishmentId,
-        createdAt: {
+        arrivalTime: {
           gte: startOfDay(new Date()),
           lte: endOfDay(new Date()),
         },
       },
+      include : {
+        user : {
+          select : {
+            name : true,
+            email : true,
+          }
+        }
+      }
     });
 
-    for (const establishment of list) {
-      const userInfo = await getByUserId(establishment.userId);
-      const result = {
-        name: userInfo.name,
-        email: userInfo.email,
-        lineInfo: establishment,
-      };
 
-      data.push(result);
-    }
 
-    res.status(200).json(data);
+    res.status(200).json(list);
   } catch (error) {
     res.status(500).json({
       error: error.message,

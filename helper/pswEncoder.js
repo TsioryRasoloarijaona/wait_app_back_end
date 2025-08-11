@@ -12,7 +12,6 @@ const encodePassword = async (password) => {
 };
 
 
-
 const comparePassword = async (plainPassword, hashedPassword) => {
   try {
     const match = await bcrypt.compare(plainPassword, hashedPassword);

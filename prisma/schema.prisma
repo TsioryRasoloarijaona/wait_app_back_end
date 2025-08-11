@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 enum ConnectionType {
   pswd
   oauth
@@ -43,24 +37,56 @@ model Users {
   email          String          @unique
   password       String?
   connectionType ConnectionType  @default(pswd)
-  permissions    Permissions[]    
+  permissions    Permissions[]
   WaitingList    WaitingList[]
   Establishment  Establishment[]
 }
 
+type generalInfo {
+  establishmentName String
+  category          String
+  averageDuration   Int
+}
+
+type geoInfo {
+  country String
+  city    String
+}
+
+type workingDetail {
+  day   String
+  open  String
+  close String
+}
+
+type location {
+  coord        Float[]
+  exactAddress String?
+}
+
+type placeInfo {
+  geoInfo  geoInfo
+  location location
+}
+
+type contactInfo {
+  email   String
+  phone   String
+  webSite String?
+}
+
 model Establishment {
-  id          String        @id @default(auto()) @map("_id") @db.ObjectId
-  adminId     String        @db.ObjectId
-  admin       Users         @relation(fields: [adminId], references: [id])
-  name        String
-  categoryId  String        @db.ObjectId
-  category    Category      @relation(fields: [categoryId], references: [id])
-  address     String
-  city        String
-  createdAt   DateTime      @default(now())
-  status      requestStatus @default(pending)
-  imageUrl    String?
-  waitingList WaitingList[]
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  adminId       String          @db.ObjectId
+  admin         Users           @relation(fields: [adminId], references: [id])
+  generalInfo   generalInfo
+  placeInfo     placeInfo
+  contactInfo   contactInfo
+  workingDetail workingDetail[]
+  createdAt     DateTime        @default(now())
+  status        requestStatus   @default(pending)
+  imageUrl      String?
+  waitingList   WaitingList[]
 }
 
 model WaitingList {
@@ -68,13 +94,8 @@ model WaitingList {
   userId            String            @db.ObjectId
   user              Users             @relation(fields: [userId], references: [id])
   establishmentId   String            @db.ObjectId
-  createdAt         DateTime          @default(now())
   establishment     Establishment     @relation(fields: [establishmentId], references: [id])
+  arrivalTime       DateTime          @default(now())
+  leavingTime       DateTime?
   waitingListStatus WaitingListStatus @default(waiting)
-}
-
-model Category {
-  id             String          @id @default(auto()) @map("_id") @db.ObjectId
-  name           String          @unique
-  Establishments Establishment[]
 }

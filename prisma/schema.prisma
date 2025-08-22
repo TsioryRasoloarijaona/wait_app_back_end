@@ -18,7 +18,7 @@ enum requestStatus {
 enum WaitingListStatus {
   waiting
   served
-  canceled
+  leaved
 }
 
 generator client {
@@ -40,6 +40,7 @@ model Users {
   permissions    Permissions[]
   WaitingList    WaitingList[]
   Establishment  Establishment[]
+  RenderVous     RenderVous[]
 }
 
 type generalInfo {
@@ -87,6 +88,7 @@ model Establishment {
   status        requestStatus   @default(pending)
   imageUrl      String?
   waitingList   WaitingList[]
+  RenderVous    RenderVous[]
 }
 
 model WaitingList {
@@ -98,4 +100,14 @@ model WaitingList {
   arrivalTime       DateTime          @default(now())
   leavingTime       DateTime?
   waitingListStatus WaitingListStatus @default(waiting)
+}
+
+model RenderVous {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String        @db.ObjectId
+  user            Users         @relation(fields: [userId], references: [id])
+  establishmentId String        @db.ObjectId
+  establishment   Establishment @relation(fields: [establishmentId], references: [id])
+  creationDate    DateTime      @default(now())
+  rdvDateTime     DateTime
 }

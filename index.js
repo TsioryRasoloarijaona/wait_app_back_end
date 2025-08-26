@@ -7,6 +7,7 @@ import pingRoutes from './routes/pingRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 import waitListRoutes from "./routes/waitListRoutes.js"
 import etablissementRouter from "./routes/etablissementRouter.js"
+import rdvRouter from "./routes/rdvRoutes.js"
 
 
 const app = express();
@@ -46,15 +47,11 @@ app.set('io', io);
 app.use(cors());
 app.use(express.json());
 
-
-
-
-
-
 app.use('/', pingRoutes);
 app.use('/users', userRoutes);
 app.use('/wait', waitListRoutes);
 app.use('/establishment', etablissementRouter);
+app.use('/rdv' , rdvRouter)
 
 
 server.listen(port, () => {

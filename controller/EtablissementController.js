@@ -1,13 +1,18 @@
 import { PrismaClient } from "../generated/prisma/index.js";
 import { getByUserId, addPermissions } from "./userController.js";
-import { getTotalWaitingList as waitListTotal } from "./WaitListController.js";
 import { sendEmail } from "../helper/emailService.js";
 
 const prisma = new PrismaClient();
 
 const createEstablishmentRequest = async (req, res) => {
-
-  let { adminId, generalInfo , placeInfo, contactInfo,workingDetail ,imageUrl } = req.body;
+  let {
+    adminId,
+    generalInfo,
+    placeInfo,
+    contactInfo,
+    workingDetail,
+    imageUrl,
+  } = req.body;
 
   const user = await getByUserId(adminId);
   if (!user) {
@@ -16,18 +21,17 @@ const createEstablishmentRequest = async (req, res) => {
 
   try {
     const inserted = await prisma.establishment.create({
-      data : {
-        adminId ,
-        generalInfo ,
+      data: {
+        adminId,
+        generalInfo,
         placeInfo,
-        contactInfo ,
-        workingDetail ,
+        contactInfo,
+        workingDetail,
         imageUrl,
-      }
-    })
+      },
+    });
 
     return res.status(201).json(inserted);
-
   } catch (error) {
     console.error(error.message);
     res.status(500).json({
@@ -46,20 +50,19 @@ const getEstablishmentsByStatus = async (req, res) => {
       orderBy: {
         createdAt: "desc",
       },
-      include : {
-        waitingList : {
+      include: {
+        waitingList: {
           where: {
-            waitingListStatus: "waiting"
-          }
-        } ,
-        admin : {
-          select : {
-            name : true,
-            email : true,
-          }
-        } ,
-
-      }
+            waitingListStatus: "waiting",
+          },
+        },
+        admin: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
 
     res.status(200).json(requests);
@@ -83,20 +86,20 @@ const getEstablishmentsByUserId = async (req, res) => {
       where: {
         adminId: userId,
       },
-      include : {
-        admin : {
-          select : {
-            name : true,
-            email : true,
-          }
-        }
-      }
+      include: {
+        admin: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
 
     res.status(200).json(establihments);
   } catch (error) {
-    res.status(500).json({ error:"error from the server" });
-    console.error(error.message) ;
+    res.status(500).json({ error: "error from the server" });
+    console.error(error.message);
   }
 };
 
@@ -135,7 +138,7 @@ const updateEstablishmentStatus = async (req, res) => {
               : "desolé"
           }`,
         });
-        console.log('email send to' , emailAdmin.email)
+        console.log("email send to", emailAdmin.email);
 
         updated.push(establishmentUpdated);
       } catch (err) {
@@ -265,14 +268,33 @@ const countEtablissementsThisWeek = async (req, res) => {
   }
 };
 
+const getEstablishmentsById = async (id) => {
+  try {
+    const establishment = await prisma.establishment.findUnique({
+      where : {
+        id : id
+      }
+    });
+    if(!establishment) 
+      return null ;
+    else 
+      return establishment ;
+    
+  } catch (error) {
+    console.error(error.message)
+  }
+};
+
 export {
-  createEstablishmentRequest,
   getEstablishmentsByStatus,
   getEstablishmentsByUserId,
-  updateEstablishmentStatus,
-  createEtablissementFromRequest,
-  updateEstablishmentPicture,
   getAllCategories,
+  getByUserId ,
+  getEstablishmentsById ,
+  createEstablishmentRequest,
+  createEtablissementFromRequest,
+  updateEstablishmentStatus,
+  updateEstablishmentPicture,
   countEstablishmentsByStatus,
   countEtablissementsThisWeek,
 };

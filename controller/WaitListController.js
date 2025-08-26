@@ -111,11 +111,10 @@ const updateLine = async (req, res) => {
 
 const getWaitListByEstablishment = async (req, res) => {
   const { establishmentId } = req.params;
-  let data = [];
   try {
     const list = await prisma.waitingList.findMany({
       where: {
-        establishmentId: establishmentId,
+        establishmentId,
         arrivalTime: {
           gte: startOfDay(new Date()),
           lte: endOfDay(new Date()),
@@ -130,9 +129,7 @@ const getWaitListByEstablishment = async (req, res) => {
         }
       }
     });
-
-
-
+    console.log('call')
     res.status(200).json(list);
   } catch (error) {
     res.status(500).json({

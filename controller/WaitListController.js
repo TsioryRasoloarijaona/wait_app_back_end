@@ -7,6 +7,19 @@ import { is } from "date-fns/locale";
 
 const prisma = new PrismaClient();
 
+const getActiveListWithUsers = async (establishmentId) => {
+  return prisma.waitingList.findMany({
+    where: {
+      establishmentId,
+      waitingListStatus: "waiting",
+      arrivalTime: { gte: startOfDay(new Date()), lte: endOfDay(new Date()) },
+    },
+    include: { user: { select: { id: true, name: true, email: true, image: true } } },
+    orderBy: { arrivalTime: "asc" },
+  });
+};
+
+
 const getTotalWaitingList = async (id) => {
   try {
     const total = await prisma.waitingList.count({
@@ -49,6 +62,7 @@ const insertWaitList = async (req, res) => {
         userId: userId,
         establishmentId: establishmentId,
         waitingListStatus: "waiting",
+        arrivalTime: { gte: startOfDay(new Date()), lte: endOfDay(new Date()) }, 
       },
     });
 
@@ -65,22 +79,64 @@ const insertWaitList = async (req, res) => {
     });
 
     const totalLine = await getTotalWaitingList(establishmentId);
+    const list = await getActiveListWithUsers(establishmentId);
     upDateWaitList({
       establishmentId,
       total: totalLine,
+      list,
     });
-    const adminId = await prisma.establishment.findUnique({
+
+    /*const adminId = await prisma.establishment.findUnique({
       where: {
         id: establishmentId,
       },
     });
+
     const newLine = await getLineInfo(waitList.id);
-    sendToAdmin(adminId.adminId, "admin", newLine);
+    sendToAdmin(adminId.adminId, "admin", newLine);*/
+
+        // (optionnel) informer l’admin
+    const est = await prisma.establishment.findUnique({ where: { id: establishmentId } });
+    const newLine = await prisma.waitingList.findUnique({
+      where: { id: waitList.id },
+      include: { user: { select: { name: true, email: true, image: true } } }, // image si dispo
+    });
+    if (est?.adminId) sendToAdmin(est.adminId, "admin", newLine);
 
     res.status(201).json({ position: totalLine });
   } catch (error) {
     res.status(500).json({ error: error.message });
     console.error(error.message);
+  }
+};
+
+// NEW: quitter la file pour la journée en cours
+export const leaveWaitList = async (req, res) => {
+  const { userId, establishmentId } = req.body;
+  try {
+    const record = await prisma.waitingList.findFirst({
+      where: {
+        userId, establishmentId,
+        waitingListStatus: "waiting",
+        arrivalTime: { gte: startOfDay(new Date()), lte: endOfDay(new Date()) },
+      },
+      orderBy: { arrivalTime: "desc" },
+    });
+
+    if (!record) return res.status(404).json({ error: "no active waiting record" });
+
+    await prisma.waitingList.update({
+      where: { id: record.id },
+      data: { waitingListStatus: "left" }, // ou "cancelled"
+    });
+
+    const total = await getTotalWaitingList(establishmentId);
+    const list = await getActiveListWithUsers(establishmentId);
+    upDateWaitList({ establishmentId, total: totalLine, list }); // ping WS
+
+    res.status(200).json({ ok: true, total });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -97,11 +153,13 @@ const updateLine = async (req, res) => {
       },
     });
     const establishmentId = updateLine.establishmentId;
-    const total = await getTotalWaitingList(establishmentId);
 
+    const total = await getTotalWaitingList(establishmentId);
+    const list = await getActiveListWithUsers(establishmentId);
     upDateWaitList({
       establishmentId,
       total,
+      list
     });
     res.status(200).json(updateLine);
   } catch (error) {
@@ -116,6 +174,7 @@ const getWaitListByEstablishment = async (req, res) => {
     const list = await prisma.waitingList.findMany({
       where: {
         establishmentId: establishmentId,
+        waitingListStatus: "waiting",
         arrivalTime: {
           gte: startOfDay(new Date()),
           lte: endOfDay(new Date()),
@@ -124,6 +183,7 @@ const getWaitListByEstablishment = async (req, res) => {
       include : {
         user : {
           select : {
+            id: true,
             name : true,
             email : true,
           }
@@ -143,6 +203,7 @@ const getWaitListByEstablishment = async (req, res) => {
 };
 
 export {
+  getActiveListWithUsers,
   getTotalWaitingList,
   insertWaitList,
   updateLine,

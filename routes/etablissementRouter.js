@@ -9,6 +9,8 @@ import {
   getEstablishmentsByUserId,
   updateEstablishmentPicture,
   updateEstablishmentStatus,
+  getEstablishmentReviews,
+  addEstablishmentReview,
 } from "../controller/EtablissementController.js";
 
 const router = express.Router();
@@ -21,5 +23,7 @@ router.put("/update/request-status", updateEstablishmentStatus);
 router.get("/categories", getAllCategories);
 router.get("/count/:status", countEstablishmentsByStatus);
 router.get("/count", countEtablissementsThisWeek);
+router.get("/:id/reviews", getEstablishmentReviews);
+router.post("/:id/reviews", addEstablishmentReview);
 
 export default router;

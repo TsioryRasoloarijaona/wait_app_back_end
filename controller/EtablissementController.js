@@ -3,6 +3,7 @@ import { getByUserId, addPermissions } from "./userController.js";
 import { getTotalWaitingList as waitListTotal } from "./WaitListController.js";
 import { sendEmail } from "../helper/emailService.js";
 
+
 const prisma = new PrismaClient();
 
 const createEstablishmentRequest = async (req, res) => {
@@ -265,6 +266,60 @@ const countEtablissementsThisWeek = async (req, res) => {
   }
 };
 
+// Récupérer tous les avis d'un établissement
+const getEstablishmentReviews = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const reviews = await prisma.review.findMany({
+      where: { establishmentId: id },
+      include: {
+        user: {
+          select: { name: true, email: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json(reviews);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des avis :", error);
+    res.status(500).json({ error: "Erreur serveur." });
+  }
+};
+
+// Ajouter un nouvel avis
+const addEstablishmentReview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, note, commentaire } = req.body;
+
+    if (!userId || !note || !commentaire) {
+      return res.status(400).json({ error: "Champs requis manquants." });
+    }
+
+    const newReview = await prisma.review.create({
+      data: {
+        establishmentId: id,
+        userId,
+        note,
+        commentaire,
+      },
+      include: {
+        user: {
+          select: { name: true, email: true },
+        },
+      },
+    });
+
+    res.status(201).json(newReview);
+  } catch (error) {
+    console.error("Erreur lors de l'ajout d'un avis :", error);
+    res.status(500).json({ error: "Erreur serveur." });
+  }
+};
+
+
 export {
   createEstablishmentRequest,
   getEstablishmentsByStatus,
@@ -275,4 +330,6 @@ export {
   getAllCategories,
   countEstablishmentsByStatus,
   countEtablissementsThisWeek,
+  getEstablishmentReviews,
+  addEstablishmentReview,    
 };

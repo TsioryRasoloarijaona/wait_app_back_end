@@ -40,6 +40,7 @@ model Users {
   permissions    Permissions[]
   WaitingList    WaitingList[]
   Establishment  Establishment[]
+  Reviews Review[]
 }
 
 type generalInfo {
@@ -87,6 +88,7 @@ model Establishment {
   status        requestStatus   @default(pending)
   imageUrl      String?
   waitingList   WaitingList[]
+  reviews Review[]
 }
 
 model WaitingList {
@@ -98,4 +100,15 @@ model WaitingList {
   arrivalTime       DateTime          @default(now())
   leavingTime       DateTime?
   waitingListStatus WaitingListStatus @default(waiting)
+}
+
+model Review {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String        @db.ObjectId
+  user            Users         @relation(fields: [userId], references: [id])
+  establishmentId String        @db.ObjectId
+  establishment   Establishment @relation(fields: [establishmentId], references: [id])
+  note            Int
+  commentaire     String
+  createdAt       DateTime      @default(now())
 }
